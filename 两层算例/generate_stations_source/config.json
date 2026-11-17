@@ -1,0 +1,56 @@
+{
+  "incident_side": "lower",
+  "upper_source_anchor_x_depth_m": [
+    750.0,
+    50.0
+  ],
+  "lower_source_anchor_x_depth_m": [
+    750.0,
+    1000.0
+  ],
+  "top_is_free_surface": true,
+  "bottom_is_free_surface": false,
+  "angle_deg": 30.0,
+  "incident_wave": "P",
+  "source_spacing_m": 10.0,
+  "source_y_spacing_m": 10.0,
+  "station_spacing_m": 10.0,
+  "generate_grid_stations": true,
+  "generate_first_stations": true,
+  "generate_central_stations": true,
+  "generate_front_stations": true,
+  "generate_interface_stations": true,
+  "grid_station_prefix": "G",
+  "line_station_prefix": "L",
+  "source_interface_clearance_m": 50.0,
+  "source_kind": "auto",
+  "couple_separation_m": 1.0,
+  "frequency_hz": 5.0,
+  "force_factor": 1000000000000000.0,
+  "force_direction": "auto",
+  "force_format": "11_lines",
+  "force_depth_unit": "km",
+  "snapshot_after_first_s": 0.05,
+  "upper": {
+    "name": "上层流体",
+    "type": "fluid",
+    "rho": 1000.0,
+    "vp": 1500.0,
+    "vs": 0.0
+  },
+  "lower": {
+    "name": "下层固体",
+    "type": "solid",
+    "rho": 2500.0,
+    "vp": 4500.0,
+    "vs": 2100.0
+  },
+  "enable_uniform_time_shift": false,
+  "uniform_time_shift_s": 0.0,
+  "generate_auto_stations": true,
+  "auto_candidate_step_m": 1.0,
+  "auto_reflected_mode": "R_P",
+  "auto_beam_clearance_m": 10.0,
+  "auto_min_stations": 10,
+  "ray_station_naming": "distance"
+}
