@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+.idea/
+.pytest_cache/
+result/
+output/
+rt_coefficients_output/
+*.sema
+*.semv
+*.semd
+*.npz
+*.log
+*.local.json

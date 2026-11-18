@@ -1,0 +1,10 @@
+{
+  "unit_tests": 5,
+  "independent_critical_angle_tests": 5,
+  "existing_data_sensitivity_rows": 90,
+  "max_existing_coefficient_difference": 3.3306690738754696e-16,
+  "default_station_count": 786,
+  "main_station_count": 726,
+  "diagnostic_station_count": 60,
+  "actual_new_array_solver_run": false
+}

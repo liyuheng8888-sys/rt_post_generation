@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""独立三层理论解计算程序。只修改本文件顶部参数，然后直接运行。"""
+"""三层频域求解核；命令行统一读取仓库根目录 wave_packet_config.json。"""
 from pathlib import Path
 import json
 import csv
@@ -13,9 +13,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-# ==================== 用户编辑区：只影响理论计算 ====================
-# 三层材料、厚度、入射侧/波型及扫描范围都在本文件内设置。
-# 不读取震源生成器的参数，不调用其他项目Python文件。
+# 以下默认值仅保留旧 solve/run Python API 兼容性。
+# 波包分支的三个命令行入口统一使用 wave_packet_config.json，不修改此处。
 MODEL = {
     "size_x_m": 1000.0,
     "size_y_m": 1000.0,
@@ -191,6 +190,48 @@ def flux(state):
     return float(np.real(tx*np.conj(ux)+tz*np.conj(uz)-pf*np.conj(wz)))
 
 
+def finite_layer_modes(m,p,omega,top,bottom):
+    """Use a nonsingular standing-wave pair near elastic/acoustic q=0.
+
+    With eta=q/s and V(+/-q)=E+/-eta*O, the two fields are
+    (F+ + F-)/2 and (F+ - F-)/(2*eta), centered inside the layer.
+    Their q=0 limits are E and O+i*omega*s*(z-center)*E.
+    These are basis amplitudes, not separate up/down traveling amplitudes.
+    Strongly evanescent modes retain the bounded interface-anchored basis.
+    """
+    entries=[]
+    for direction in (1,-1):
+        for wave,mode in modes(m,p,omega,direction).items():
+            entries.append(dict(wave=wave,direction=direction,
+                                anchor=top if direction==1 else bottom,**mode))
+    if kind(m)=='poroelastic':return entries
+    for wave in names(m):
+        pair=[entry for entry in entries if entry['wave']==wave]
+        plus,minus=pair;q=plus['q'];s=plus['slowness']
+        if abs(q/s)>=1e-3 or abs((omega*q*(bottom-top)).imag)>1:continue
+        even=(plus['state']+minus['state'])/2
+        mu=m['rho']*m['vs']**2
+        # O=s*dV/dq is evaluated analytically, including exactly q=0.
+        odd=np.array([0,1,0,2*mu*p,0,0] if wave=='P'
+                     else [-1,0,0,0,2*mu*p,0],complex)
+        for entry,basis,state in zip(pair,('even','odd'),(even,odd)):
+            entry.update(direction=0,anchor=top+(bottom-top)/2,q=q,
+                         basis=basis,state=state,even_state=even,odd_state=odd)
+    return entries
+
+
+def basis_state(entry,omega,depth):
+    """Evaluate a traveling or regularized internal basis field at depth."""
+    distance=depth-entry['anchor']
+    if entry.get('basis','traveling')=='traveling':
+        return entry['state']*np.exp(1j*omega*entry['q']*distance)
+    q=entry['q'];s=entry['slowness'];x=omega*q*distance
+    even,odd=entry['even_state'],entry['odd_state']
+    if entry['basis']=='even':return even*np.cos(x)+1j*(q/s)*odd*np.sin(x)
+    # np.sinc(x/pi)=sin(x)/x, with its analytic value 1 at zero.
+    return odd*np.cos(x)+1j*omega*s*distance*even*np.sinc(x/np.pi)
+
+
 def solve(model,incident,angle_deg=None,frequency_hz=None):
     c=copy.deepcopy(incident)
     if angle_deg is not None:c['angle_deg']=float(angle_deg)
@@ -203,6 +244,9 @@ def solve(model,incident,angle_deg=None,frequency_hz=None):
     unknown=[]
     # Exterior outgoing modes and both directions inside the finite layer.
     for layer,medium,directions in [('upper',up,[-1]),('middle',mid,[1,-1]),('lower',low,[1])]:
+        if layer=='middle':
+            unknown.extend(dict(layer=layer,**entry) for entry in finite_layer_modes(mid,p,omega,dtop,dbottom))
+            continue
         for direction in directions:
             for label,entry in modes(medium,p,omega,direction).items():
                 anchor=dtop if layer=='upper' or (layer=='middle' and direction==1) else dbottom
@@ -213,7 +257,7 @@ def solve(model,incident,angle_deg=None,frequency_hz=None):
         L,R=interface_rows(model[a],model[b],contact);block=np.zeros((len(L),n),complex);known=np.zeros(len(L),complex)
         for j,entry in enumerate(unknown):
             op=L if entry['layer']==a else R if entry['layer']==b else None
-            if op is not None:block[:,j]=(op@entry['state'])*np.exp(1j*omega*entry['q']*(depth-entry['anchor']))
+            if op is not None:block[:,j]=op@basis_state(entry,omega,depth)
         if side==a:known=L@incident_mode['state']
         if side==b:known=R@incident_mode['state']
         mat.extend(block);rhs.extend(-known)
@@ -228,7 +272,8 @@ def solve(model,incident,angle_deg=None,frequency_hz=None):
     for entry,value in zip(unknown,solution):
         layer=entry['layer'];wave=entry['wave']
         if layer=='middle':
-            internal.append(dict(wave=wave,direction=entry['direction'],coefficient=value,q=entry['q'],state=entry['state']))
+            # Evaluate with basis_state; direction=0 denotes an even/odd pair.
+            internal.append(dict(entry,coefficient=value))
             continue
         tag=('R_' if layer==side else 'T_')+wave
         coeff[tag]=value
@@ -239,7 +284,7 @@ def solve(model,incident,angle_deg=None,frequency_hz=None):
     for depth in (dtop,dbottom):
         state=np.zeros(6,complex)
         for entry,value in zip(unknown,solution):
-            if entry['layer']=='middle':state+=value*entry['state']*np.exp(1j*omega*entry['q']*(depth-entry['anchor']))
+            if entry['layer']=='middle':state+=value*basis_state(entry,omega,depth)
         internal_states.append(state)
     layer_loss=(flux(internal_states[0])-flux(internal_states[1]))/incflux
     return dict(coefficients=coeff,energy=energies,R_energy=er,T_energy=et,absorption=1-er-et,
@@ -351,5 +396,7 @@ def run(model=MODEL,incident=INCIDENT,settings=THEORY,output=None):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path)
-    args=parser.parse_args();run(output=args.output)
+    import sys
+    sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
+    from wave_packet import theory_cli
+    theory_cli()

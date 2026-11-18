@@ -1,0 +1,166 @@
+{
+  "schema": "wave_packet_v1",
+  "case_name": "WavePacket_upper_60_P_95Hz",
+  "model": {
+    "size_x_m": 4000.0,
+    "size_y_m": 600.0,
+    "upper_thickness_m": 1999.0,
+    "middle_thickness_m": 1.0,
+    "lower_thickness_m": 2000.0,
+    "upper": {
+      "name": "上层固体",
+      "type": "solid",
+      "rho": 2000.0,
+      "vp": 3000.0,
+      "vs": 1800.0
+    },
+    "middle": {
+      "name": "中间软弱层",
+      "type": "solid",
+      "rho": 1000.0,
+      "vp": 1450.0,
+      "vs": 850.0,
+      "poroelastic_enabled": false,
+      "biot": {
+        "rho_s": 2500.0,
+        "rho_f": 1000.0,
+        "porosity": 0.35,
+        "tortuosity": 2.0,
+        "permeability_m2": 1e-10,
+        "viscosity_Pa_s": 0.001,
+        "grain_bulk_Pa": 36000000000.0,
+        "fluid_bulk_Pa": 2250000000.0,
+        "frame_bulk_Pa": 100000000.0,
+        "frame_shear_Pa": 20000000.0
+      }
+    },
+    "lower": {
+      "name": "下层固体",
+      "type": "solid",
+      "rho": 2500.0,
+      "vp": 4500.0,
+      "vs": 2100.0
+    },
+    "upper_middle_pore_condition": "open",
+    "middle_lower_pore_condition": "sealed",
+    "material_ids": {
+      "upper": 1,
+      "middle": 2,
+      "lower": 3
+    }
+  },
+  "incident": {
+    "side": "upper",
+    "wave": "P",
+    "angle_deg": 60.0,
+    "frequency_hz": 95.0,
+    "source_spacing_m": 10.0,
+    "source_y_spacing_m": 10.0,
+    "source_outer_boundary_clearance_m": 100.0,
+    "source_outer_x_margin_m": 100.0,
+    "source_top_clearance_m": 100.0,
+    "couple_separation_m": 1.0,
+    "force_factor": 1000000000000000.0,
+    "uniform_time_shift_s": 0.0,
+    "reference_x_m": 1600.0,
+    "reference_depth_m": {
+      "upper": 1550.0,
+      "lower": 2450.0
+    },
+    "peak_time_s": 0.0,
+    "min_point_source_boundary_distance_m": 10.0
+  },
+  "geometry": {
+    "outer_bounds_m": {
+      "x": [
+        0.0,
+        4000.0
+      ],
+      "y": [
+        0.0,
+        600.0
+      ],
+      "z": [
+        0.0,
+        4000.0
+      ]
+    },
+    "research_bounds_m": {
+      "x": [
+        1500.0,
+        2500.0
+      ],
+      "y": [
+        100.0,
+        500.0
+      ],
+      "z": [
+        1500.0,
+        2500.0
+      ]
+    }
+  },
+  "stations": {
+    "center_x_m": 2035.0,
+    "plane_y_m": 300.0,
+    "width_m": 300.0,
+    "step_x_m": 2.5,
+    "upper_offsets_m": [
+      20.0,
+      40.0,
+      70.0
+    ],
+    "lower_offsets_m": [
+      20.0,
+      40.0,
+      70.0
+    ],
+    "fit_depth_count": 2,
+    "diagnostic_y_offsets_m": [
+      -50.0,
+      50.0
+    ],
+    "diagnostic_x_offsets_m": [
+      -50.0,
+      -25.0,
+      0.0,
+      25.0,
+      50.0
+    ]
+  },
+  "processing": {
+    "trace_quantity": "displacement",
+    "component_codes": {
+      "X": "FXX",
+      "Z": "FXZ"
+    },
+    "z_positive": "up",
+    "primary_width_m": 100.0,
+    "widths_m": [
+      100.0,
+      200.0,
+      300.0
+    ],
+    "primary_padding_cycles": 3.0,
+    "padding_cycles": [
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0
+    ],
+    "primary_taper": 0.0,
+    "tapers": [
+      0.0,
+      0.1
+    ],
+    "nfft": 16384,
+    "minimum_samples": 16,
+    "maximum_operator_condition": 100000000.0
+  },
+  "theory": {
+    "spectrum_min_hz": 1.0,
+    "spectrum_max_hz": 300.0,
+    "spectrum_step_hz": 1.0
+  }
+}
